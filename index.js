@@ -2,7 +2,7 @@ const express = require('express')
 const app = express()
 const cors = require('cors');
 const port = process.env.PORT || 5000;
-require('dotenv').config()
+require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 // Middlewear 
@@ -19,6 +19,7 @@ async function run () {
         // Connecting db 
         await client.connect();
         const servicesCollection = client.db('DoctorsPortal').collection('Services');
+        const bookingsCollection = client.db('DoctorsPortal').collection('Bookings');
 
         // Service get
         app.get('/services', async (req, res) => {
@@ -26,6 +27,20 @@ async function run () {
             const cursor = servicesCollection.find(query);
             const resutl = await cursor.toArray();
             res.send(resutl);
+        });
+
+        // Booking post 
+        app.post('/booking', async (req, res) => {
+          const booking = req.body;
+          const query = {treatment: booking.treatment, date: booking.date, email: booking.email};
+          const exists = await bookingsCollection.findOne(query);
+
+          if (exists) {
+            return res.send({success: false, booking: exists})
+          }
+
+          const result = await bookingsCollection.insertOne(booking);
+          res.send({success: true,  result});
         });
 
  
