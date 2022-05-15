@@ -20,6 +20,7 @@ async function run () {
         await client.connect();
         const servicesCollection = client.db('DoctorsPortal').collection('Services');
         const bookingsCollection = client.db('DoctorsPortal').collection('Bookings');
+        const usersCollection = client.db('DoctorsPortal').collection('Users');
 
         // Service get
         app.get('/services', async (req, res) => {
@@ -77,6 +78,18 @@ async function run () {
           const result = await bookingsCollection.insertOne(booking);
           res.send({success: true,  result});
         });
+
+        // Adding users 
+        app.put('/add-user', async(req, res) => {
+          const user = req.body;
+          const filter = {email: user.email};
+          const options = { upsert: true}
+          const updateDocument = {
+              $set: {...user},
+          }
+          const result = await usersCollection.updateOne(filter, updateDocument, options);
+          res.send(result);
+      });
 
  
     }
