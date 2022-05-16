@@ -10,6 +10,7 @@ const jwt = require('jsonwebtoken');
 app.use(cors());
 app.use(express.json());
 
+// Token verify middlewear 
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
@@ -40,6 +41,19 @@ async function run () {
         const bookingsCollection = client.db('DoctorsPortal').collection('Bookings');
         const usersCollection = client.db('DoctorsPortal').collection('Users');
         const doctorsCollection = client.db('DoctorsPortal').collection('Doctors');
+
+        // Verify Admin 
+        const verifyAdmin =  async(req, res, next) => {
+          const requester = req.decoded.email;
+          const requesterAccount = await usersCollection.findOne({email: requester});
+
+          if (requesterAccount.role == 'admin') {
+            next();
+          }
+          else{
+            return res.status(403).send({message: 'Forbidden Access!'});
+          }
+        };
 
         // Service get
         app.get('/services', async (req, res) => {
@@ -126,21 +140,14 @@ async function run () {
       });
 
       // making user admin 
-      app.put('/user/admin/:email', verifyToken, async(req, res) => {
+      app.put('/user/admin/:email', verifyToken, verifyAdmin, async(req, res) => {
         const email = req.params.email;
-        const requester = req.decoded.email;
-        const requesterAccount = await usersCollection.findOne({email: requester});
-
-        if (requesterAccount.role == 'admin') {
-          const filter = {email: email};
-          const updateDocument = {
-              $set: {role: 'admin'},
-          };
-          const result = await usersCollection.updateOne(filter, updateDocument);
-          res.send(result);
-        }else{
-          res.status(403).send({message: 'Forbidden Access!'});
-        }        
+        const filter = {email: email};
+        const updateDocument = {
+            $set: {role: 'admin'},
+        };
+        const result = await usersCollection.updateOne(filter, updateDocument);
+        res.send(result);        
       });
 
       // check admin or not 
@@ -152,7 +159,7 @@ async function run () {
       });
 
       // Doctor Add 
-      app.post('/add-doctor', async(req, res) => {
+      app.post('/add-doctor', verifyToken, verifyAdmin, async(req, res) => {
         const doctor = req.body;
         const result = await doctorsCollection.insertOne(doctor);
         res.send(result);
