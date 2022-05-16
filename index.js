@@ -4,6 +4,7 @@ const cors = require('cors');
 const port = process.env.PORT || 5000;
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const jwt = require('jsonwebtoken');
 
 // Middlewear 
 app.use(cors());
@@ -79,16 +80,18 @@ async function run () {
           res.send({success: true,  result});
         });
 
-        // Adding users 
-        app.put('/add-user', async(req, res) => {
+        // Upsert users and issue token 
+        app.put('/user/:email', async(req, res) => {
+          const email = req.params.email;
           const user = req.body;
-          const filter = {email: user.email};
-          const options = { upsert: true}
+          const filter = {email: email};
+          const options = { upsert: true};
           const updateDocument = {
               $set: {...user},
-          }
+          };
           const result = await usersCollection.updateOne(filter, updateDocument, options);
-          res.send(result);
+          const token = jwt.sign({email: email}, process.env.TOKEN_SECRET, {expiresIn: '1d' });
+          res.send({result, token});
       });
 
  
