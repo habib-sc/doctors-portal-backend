@@ -104,8 +104,14 @@ async function run () {
           res.send({success: true,  result});
         });
 
+        // user get 
+        app.get('/users', verifyToken, async (req, res) => {
+          const users = await usersCollection.find().toArray();
+          res.send(users);
+        });
+
         // Upsert users and issue token 
-        app.put('/user/:email', async(req, res) => {
+      app.put('/user/:email', async(req, res) => {
           const email = req.params.email;
           const user = req.body;
           const filter = {email: email};
@@ -116,6 +122,24 @@ async function run () {
           const result = await usersCollection.updateOne(filter, updateDocument, options);
           const token = jwt.sign({email: email}, process.env.TOKEN_SECRET, {expiresIn: '1d' });
           res.send({result, token});
+      });
+
+      // making user admin 
+      app.put('/user/admin/:email', verifyToken, async(req, res) => {
+        const email = req.params.email;
+        const requester = req.decoded.email;
+        const requesterAccount = await usersCollection.findOne({email: requester});
+
+        if (requesterAccount.role == 'admin') {
+          const filter = {email: email};
+          const updateDocument = {
+              $set: {role: 'admin'},
+          };
+          const result = await usersCollection.updateOne(filter, updateDocument);
+          res.send(result);
+        }else{
+          res.status(403).send({message: 'Forbidden Access!'});
+        }        
       });
 
  
