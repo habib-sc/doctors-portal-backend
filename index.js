@@ -39,11 +39,12 @@ async function run () {
         const servicesCollection = client.db('DoctorsPortal').collection('Services');
         const bookingsCollection = client.db('DoctorsPortal').collection('Bookings');
         const usersCollection = client.db('DoctorsPortal').collection('Users');
+        const doctorsCollection = client.db('DoctorsPortal').collection('Doctors');
 
         // Service get
         app.get('/services', async (req, res) => {
             const query = {};
-            const cursor = servicesCollection.find(query);
+            const cursor = servicesCollection.find(query).project({name: 1});
             const resutl = await cursor.toArray();
             res.send(resutl);
         });
@@ -142,12 +143,20 @@ async function run () {
         }        
       });
 
+      // check admin or not 
       app.get('/admin/:email', async (req, res) => {
         const email = req.params.email;
         const user = await usersCollection.findOne({email: email});
         const isAdmin = user.role === 'admin';
         res.send({admin: isAdmin});
       });
+
+      // Doctor Add 
+      app.post('/add-doctor', async(req, res) => {
+        const doctor = req.body;
+        const result = await doctorsCollection.insertOne(doctor);
+        res.send(result);
+      } );
 
  
     }
