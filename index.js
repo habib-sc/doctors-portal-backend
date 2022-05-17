@@ -165,6 +165,12 @@ async function run () {
         res.send(result);
       } );
 
+      // Doctor get 
+      app.get('/doctors', verifyToken, verifyAdmin, async (req, res) => {
+        const result = await doctorsCollection.find().toArray();
+        res.send(result);
+      });
+
  
     }
     finally{
