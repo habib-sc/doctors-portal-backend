@@ -152,6 +152,14 @@ async function run () {
           }
         });
 
+        // Get booking by id 
+        app.get('/booking/:id', verifyToken, async (req, res) => {
+          const id = req.params.id;
+          const query = {_id: ObjectId(id)};
+          const result = await bookingsCollection.findOne(query);
+          res.send(result);
+        });
+
 
         // Booking post 
         app.post('/booking', async (req, res) => {
