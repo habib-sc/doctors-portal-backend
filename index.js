@@ -6,6 +6,9 @@ require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 
+const nodemailer = require('nodemailer');
+const sgTransport = require('nodemailer-sendgrid-transport');
+
 // Middlewear 
 app.use(cors());
 app.use(express.json());
@@ -27,6 +30,51 @@ const verifyToken = (req, res, next) => {
     next();
   });
 };
+
+// Email Option 
+const emailSenderOptions = {
+  auth: {
+    api_key: process.env.SENDGRID_API_KEY
+  }
+}
+
+const emailClient = nodemailer.createTransport(sgTransport(emailSenderOptions));
+
+// Email Sending 
+const sendAppointmentEmail = (booking) =>{
+  const { patientName, email, treatment, date, slot } = booking;
+
+  var emailData = {
+    from: process.env.EMAIL_SENDER,
+    to: email,
+    subject: `Appointment for ${treatment} on ${date} at ${slot}`,
+    text: `Your Appointment Confirmed for ${treatment} on ${date} at ${slot}`,
+    html: `
+      <div>
+        <h3>Hello ${patientName}, </h3>
+
+        <p>Your Appointment Confirmed for ${treatment}.<p>
+        <p>Appointment Date: ${date}.<p>
+        <p>Appointment Time: ${slot}.<p>
+
+        <h3>Our Address</h3>
+        <p>Bhulta, Rupganj, Narayanganj</p>
+        <P>Bangladesh</>
+        <a href="#">Unsubscribe</>
+      </div>
+    `
+  };
+
+  emailClient.sendMail(emailData, function(err, info){
+    if (err ){
+      console.log(err);
+    }
+    else {
+      console.log('Message sent: ' + info);
+    }
+  });
+
+}
 
 
 // DB Info 
@@ -116,6 +164,7 @@ async function run () {
           }
 
           const result = await bookingsCollection.insertOne(booking);
+          sendAppointmentEmail(booking);
           res.send({success: true,  result});
         });
 
