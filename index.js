@@ -165,6 +165,14 @@ async function run () {
         res.send(result);
       } );
 
+      // Doctor Delete 
+      app.delete('/doctor/:email', verifyToken, verifyAdmin, async(req, res) => {
+        const email = req.params.email;
+        const query = {email: email};
+        const result = await doctorsCollection.deleteOne(query);
+        res.send(result);
+      } );
+
       // Doctor get 
       app.get('/doctors', verifyToken, verifyAdmin, async (req, res) => {
         const result = await doctorsCollection.find().toArray();
