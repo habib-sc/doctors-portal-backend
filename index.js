@@ -5,6 +5,7 @@ const port = process.env.PORT || 5000;
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
+const stripe = require('stripe')(process.env.STRIPE_SECRET);
 
 const nodemailer = require('nodemailer');
 const sgTransport = require('nodemailer-sendgrid-transport');
@@ -174,6 +175,21 @@ async function run () {
           const result = await bookingsCollection.insertOne(booking);
           sendAppointmentEmail(booking);
           res.send({success: true,  result});
+        });
+
+        // payment api
+        app.post('/create-payment-intent', verifyToken, async (req, res) => {
+          const service = req.body;
+          const price = service.price;
+          const amount = price*100;
+
+          const paymentIntent = await stripe.paymentIntents.create({
+            amount: amount,
+            currency: 'usd',
+            payment_method_types: ['card']
+          });
+          res.send({clientSecret: paymentIntent.client_secret})
+
         });
 
         // user get 
